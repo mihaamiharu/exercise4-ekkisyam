@@ -12,32 +12,70 @@ class WeatherApp {
     }
 
     init() {
-        // TODO: Add event listeners
-        // TODO: Check for city in URL parameters
+        this.searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+        this.updateHistoryList();
+        this.searchBtn.addEventListener('click', this.handleSearch.bind(this));
+
+        this.cityInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                this.handleSearch();
+            }
+        });
     }
 
     handleSearch() {
-        // TODO: Implement search functionality
+        const city = this.cityInput.value.trim();
+        if (city) {
+            fetchWeather(city)
+                .then(data => {
+                    if (data.cod !== '404') {
+                        this.displayWeather(data);
+                        this.addToHistory(city);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    alert(`Error: ${error.message}`);
+                });
+        }
     }
 
     displayWeather(data) {
-        // TODO: Display weather data
+        this.weatherContainer.innerHTML = `
+            <h2>${data.name}, ${data.sys.country}</h2>
+            <p>Temperature: ${(data.main.temp - 273.15).toFixed(2)} °C</p>
+            <p>Weather: ${data.weather[0].description}</p>
+            <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Weather icon">
+        `;
     }
 
     addToHistory(city) {
-        // TODO: Add city to search history
+        if (!this.searchHistory.includes(city)) {
+            this.searchHistory.push(city);
+            localStorage.setItem('searchHistory', JSON.stringify(this.searchHistory));
+            this.updateHistoryList();
+        }
     }
 
     updateHistoryList() {
-        // TODO: Update the history list in the UI
+        this.historyList.innerHTML = '';
+        this.searchHistory.forEach(city => {
+            const listItem = document.createElement('li');
+            listItem.textContent = city;
+            listItem.addEventListener('click', this.handleHistoryClick.bind(this));
+            this.historyList.appendChild(listItem);
+        });
     }
 
     handleHistoryClick(e) {
-        // TODO: Handle clicks on history items
+        const city = e.target.textContent;
+        this.cityInput.value = city;
+        this.handleSearch();
     }
 
     updateURL(city) {
-        // TODO: Update URL with the searched city
+        window.history.pushState({}, '', `?city=${city}`);
     }
 }
 
